@@ -48,7 +48,7 @@ jobs:
       - name: Wait for EC2 to be ready
         run: |
           echo "Waiting for EC2 to boot and install Docker..."
-          sleep 90
+          sleep 120
 
       - name: Deploy App on EC2
         uses: appleboy/ssh-action@v1
@@ -57,6 +57,16 @@ jobs:
           username: ubuntu
           key: ${{ env.PRIVATE_KEY }}
           script: |
+            # Wait for Docker to be ready
+            for i in {1..10}; do
+              if command -v docker &> /dev/null; then
+                echo "Docker is ready!"
+                break
+              fi
+              echo "Waiting for Docker... attempt $i"
+              sleep 15
+            done
+
             if [ ! -d ~/skillpulse ]; then
               git clone https://github.com/${{ github.repository }} ~/skillpulse
             fi
