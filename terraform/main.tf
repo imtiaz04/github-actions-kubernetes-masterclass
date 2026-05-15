@@ -80,7 +80,7 @@ resource "tls_private_key" "main" {
 }
 
 resource "aws_key_pair" "main" {
-  key_name   = "${var.app_name}-key"
+  key_name   = "${var.app_name}-key-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   public_key = tls_private_key.main.public_key_openssh
 }
 
