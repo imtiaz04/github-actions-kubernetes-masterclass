@@ -15,14 +15,12 @@ provider "aws" {
   region = var.aws_region
 }
 
-# VPC
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   tags = { Name = "${var.app_name}-vpc" }
 }
 
-# Subnet
 resource "aws_subnet" "main" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -30,9 +28,11 @@ resource "aws_subnet" "main" {
   tags = { Name = "${var.app_name}-subnet" }
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "main" 
-# Route Table
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+  tags   = { Name = "${var.app_name}-igw" }
+}
+
 resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
   route {
@@ -46,7 +46,6 @@ resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
 }
 
-# Security Group
 resource "aws_security_group" "main" {
   name   = "${var.app_name}-sg"
   vpc_id = aws_vpc.main.id
@@ -75,7 +74,6 @@ resource "aws_security_group" "main" {
   tags = { Name = "${var.app_name}-sg" }
 }
 
-# Key Pair
 resource "tls_private_key" "main" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -86,9 +84,8 @@ resource "aws_key_pair" "main" {
   public_key = tls_private_key.main.public_key_openssh
 }
 
-# EC2
 resource "aws_instance" "main" {
-  ami                    = "ami-091138d0f0d41ff90"
+  ami                    = "ami-0c7217cdde317cfec"
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.main.id]
