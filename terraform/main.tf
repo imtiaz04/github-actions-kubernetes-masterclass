@@ -31,11 +31,7 @@ resource "aws_subnet" "main" {
 }
 
 # Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.app_name}-igw" }
-}
-
+resource "aws_internet_gateway" "main" 
 # Route Table
 resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
