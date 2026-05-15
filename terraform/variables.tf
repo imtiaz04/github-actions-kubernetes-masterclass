@@ -12,9 +12,6 @@ variable "app_name" {
 
 variable "dockerhub_username" {
   description = "Docker Hub username"
+  default     = "" 
 }
 
-variable "dockerhub_username" {
-  description = "Docker Hub username"
-  default     = ""        # ← add this line
-}
