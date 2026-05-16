@@ -41,54 +41,19 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           EC2_IP=$(cd terraform && terraform output -raw ec2_public_ip)
+          PRIVATE_KEY=$(cd terraform && terraform output -raw private_key)
           echo "EC2_IP=$EC2_IP" >> $GITHUB_ENV
+          echo "PRIVATE_KEY<<EOF" >> $GITHUB_ENV
+          echo "$PRIVATE_KEY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          # Also store in GitHub secrets for future runs
           echo "$EC2_IP" | gh secret set EC2_HOST --repo ${{ github.repository }}
-          cd terraform && terraform output -raw private_key | \
-          gh secret set EC2_SSH_KEY --repo ${{ github.repository }}
-          echo "✅ Secrets stored securely in GitHub!"
-
-      - name: Wait for EC2 to be ready
-        run: |
-          echo "Waiting for EC2 to boot..."
-          sleep 60
+          echo "$PRIVATE_KEY" | gh secret set EC2_SSH_KEY --repo ${{ github.repository }}
+          echo "✅ Secrets stored!"
 
       - name: Deploy App on EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.EC2_IP }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            for i in {1..20}; do
-              if [ -f /tmp/docker-ready ]; then
-                echo "✅ Docker is ready!"
-                break
-              fi
-              echo "Waiting for Docker... attempt $i/20"
-              sleep 15
-            done
-
-            if ! command -v docker &> /dev/null; then
-              echo "❌ Docker not found"
-              exit 1
-            fi
-
-            if [ ! -d ~/skillpulse ]; then
-              git clone https://github.com/${{ github.repository }} ~/skillpulse
-            fi
-            cd ~/skillpulse
-            git pull origin main
-            cat > .env << EOF
-            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            MYSQL_ROOT_PASSWORD=skillpulse123
-            MYSQL_DATABASE=skillpulse
-            DB_HOST=db
-            DB_PORT=3306
-            DB_USER=root
-            DB_PASSWORD=skillpulse123
-            DB_NAME=skillpulse
-            EOF
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
-            echo "✅ App deployed at http://${{ env.EC2_IP }}"
+          key: ${{ env.PRIVATE_KEY }}    # ← use env, not secrets
