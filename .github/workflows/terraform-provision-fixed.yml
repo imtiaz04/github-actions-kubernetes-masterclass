@@ -91,7 +91,7 @@ jobs:
           cd ~/skillpulse
           git pull origin main
           cat > .env << EOF
-          DOCKERHUB_USERNAME=imtiaz04
+          DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}
           MYSQL_ROOT_PASSWORD=skillpulse123
           MYSQL_DATABASE=skillpulse
           DB_HOST=db
