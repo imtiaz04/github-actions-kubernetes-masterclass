@@ -1,0 +1,63 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+
+variable "ec2_instance_id" {
+  type = string
+}
+
+variable "ec2_public_ip" {
+  type = string
+}
+
+variable "ssh_private_key_path" {
+  type      = string
+  sensitive = true
+}
+
+variable "runner_os_user" {
+  type    = string
+  default = "ubuntu"
+}
+
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+resource "null_resource" "fix_docker_socket_permissions" {
+  triggers = {
+    instance_id = var.ec2_instance_id
+    runner_user = var.runner_os_user
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.ec2_public_ip
+    user        = var.runner_os_user
+    private_key = file(var.ssh_private_key_path)
+    timeout     = "2m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo groupadd -f docker",
+      "sudo usermod -aG docker ${var.runner_os_user}",
+      "sudo chmod 660 /var/run/docker.sock",
+      "sudo chown root:docker /var/run/docker.sock",
+      "sudo systemctl enable docker",
+      "sudo systemctl start docker",
+      "docker info > /dev/null && echo 'SUCCESS: Docker socket is accessible'",
+    ]
+  }
+}
+
+output "fix_status" {
+  value      = "Docker socket permissions fixed on ${var.ec2_instance_id} for user '${var.runner_os_user}'"
+  depends_on = [null_resource.fix_docker_socket_permissions]
+}

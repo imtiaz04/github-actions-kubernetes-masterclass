@@ -84,10 +84,7 @@ jobs:
             echo "Waiting for Docker... $i/20"
             sleep 15
           done
-          if ! command -v docker &> /dev/null; then
-            echo "❌ Docker not found"
-            exit 1
-          fi
+
           if [ ! -d ~/skillpulse ]; then
             git clone https://github.com/imtiaz04/github-actions-kubernetes-masterclass ~/skillpulse
           fi
@@ -103,9 +100,11 @@ jobs:
           DB_PASSWORD=skillpulse123
           DB_NAME=skillpulse
           EOF
+          newgrp docker << DOCKERCMD
           docker compose pull
           docker compose up -d
           docker image prune -f
+          DOCKERCMD
           echo "✅ App deployed!"
           ENDSSH
         env:
